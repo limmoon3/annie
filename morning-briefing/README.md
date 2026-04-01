@@ -1,33 +1,52 @@
 # Morning Briefing
 
-매일 아침 Google Calendar 일정, 판교 날씨, 운동복 알림을 카카오톡으로 전송하는 스크립트.
+매일 아침 일정, 날씨, 아기 성장, 뉴스를 카카오톡으로 전송하는 개인 자동화 봇.
+다중 수신자 지원, 수신자별 콘텐츠 커스터마이징, 웹 관리 UI 포함.
 
 ## 기능
 
+- **다중 수신자** — `recipients.json`으로 수신자별 콘텐츠/위치/키워드 설정
 - **오늘 일정** — Google Calendar에서 당일 일정 조회
-- **운동복 알림** — 캘린더에 운동 관련 일정이 있으면 알림
-- **판교 날씨** — 현재 기온, 체감온도, 최저/최고, 습도, 비 예보
-- **옷차림 추천** — 체감온도 기준 8단계 옷차림 제안
-- **부분 실패 처리** — 캘린더 또는 날씨 API 실패 시 나머지 정보만 전송
+- **운동복 알림** — 수신자별 운동 키워드로 캘린더 매칭
+- **날씨** — 수신자별 위치 기반 날씨 (기온, 체감, 습도, 비 예보)
+- **옷차림 추천** — 실제 기온 기준 9단계 옷차림 제안
+- **미세먼지** — PM2.5/PM10 등급 + 마스크 권고
+- **아기 성장** — 월령, 발달사항, 돌 카운트다운 (D-10/3/1/당일 특별 메시지)
+- **뉴스 헤드라인** — Google News RSS 한국 주요 뉴스 5건
+- **주간 날씨** — 월요일 한정 5일 예보 트렌드
+- **요일 알림** — 수신자별 요일 커스텀 알림
+- **부분 실패 처리** — API 실패 시 나머지 정보만 전송
 - **토큰 만료 경고** — 카카오 refresh_token 만료 7일 전부터 경고
+- **전송 이력** — 날짜별 성공/실패 기록
+- **관리 웹 UI** — 수신자 CRUD, 미리보기, 수동 전송, 전송 이력
 
 ## 메시지 예시
 
 ```
-04/01 (수) 모닝 브리핑
+04/02 (목) 모닝 브리핑
 
-[운동복 챙겨!] 필라테스 (18:00)
+[알림] 아기 선생님 주차등록
 
-[판교 날씨] 튼구름
-  현재 11도 (체감 9도)
-  최저 8도 / 최고 16도
-  습도 31%
+[아기 성장] 생후 11개월 5일째
+  이 시기: 몇 걸음 터벅거리며 걷고, '엄마' '아빠' 등 말을 해요
+  돌까지 D-27
 
-[옷차림 추천] 코트, 점퍼
+[오늘은 운동 없음]
 
-[오늘 일정] 2건
-  10:00 인프라 개발 스터디
-  14:00 [WAG] 배포 스크럼
+[판교 날씨] 맑음
+  현재 6도 (체감 4도)
+  최저 6도 / 최고 16도
+  습도 67%
+
+[옷차림 추천] 코트, 두꺼운 점퍼
+
+[미세먼지] PM2.5 95 (매우나쁨) / PM10 101 (나쁨) → 마스크 챙기세요!
+
+[오늘의 뉴스]
+  1. 트럼프 "이란 새 대통령, 휴전 요청..."
+  2. ...
+
+[오늘 일정 없음]
 ```
 
 ## 설치
@@ -36,9 +55,42 @@
 bash install.sh
 ```
 
-## 인증 토큰 가이드
+## 수신자 설정
 
-이 프로젝트는 3개의 외부 API를 사용하며, 각각 인증 방식과 갱신 주기가 다르다.
+`recipients.example.json`을 `recipients.json`으로 복사 후 편집:
+
+```bash
+cp recipients.example.json recipients.json
+```
+
+섹션별 on/off로 수신자마다 다른 콘텐츠를 받을 수 있다.
+
+| 섹션 | 설명 |
+|------|------|
+| `weather` | 날씨 |
+| `air_quality` | 미세먼지 |
+| `clothing` | 옷차림 추천 |
+| `calendar` | 캘린더 일정 |
+| `workout` | 운동복 알림 |
+| `reminder` | 요일별 커스텀 알림 |
+| `baby` | 아기 성장 정보 |
+| `news` | 뉴스 헤드라인 |
+| `weekly_weather` | 주간 날씨 (월요일) |
+
+전송 방식:
+- `"self"` — 나에게 보내기 (본인 계정)
+- `"friend"` — 카카오 친구에게 전송 (`kakao_uuid` 필요, `friends` 스코프 필요)
+
+## 관리 웹 UI
+
+```bash
+.venv/bin/python web/app.py
+# http://localhost:8888
+```
+
+수신자 추가/수정/삭제, 메시지 미리보기, 수동 전송, 전송 이력 조회 가능.
+
+## 인증 토큰 가이드
 
 ### 1. OpenWeatherMap — API Key
 
@@ -46,130 +98,69 @@ bash install.sh
 |------|------|
 | 방식 | 고정 API Key |
 | 만료 | 없음 (영구) |
-| 갱신 | 불필요 |
 | 저장 위치 | `.env` → `OPENWEATHER_API_KEY` |
-
-**발급 방법:**
-1. https://openweathermap.org/api 가입
-2. API Keys 메뉴에서 키 복사
-3. `.env`에 입력
 
 ### 2. Google Calendar — OAuth 2.0
 
 | 항목 | 내용 |
 |------|------|
-| 방식 | OAuth 2.0 (Authorization Code Flow) |
-| access_token 만료 | 1시간 |
-| refresh_token 만료 | 없음 (자동 갱신) |
-| 갱신 | 자동 — 스크립트가 만료 시 refresh_token으로 자동 갱신 |
-| 저장 위치 | `credentials/google_credentials.json` (OAuth 클라이언트), `credentials/google_token.json` (토큰) |
+| 방식 | OAuth 2.0 |
+| access_token | 자동 갱신 |
+| 저장 위치 | `credentials/google_credentials.json`, `credentials/google_token.json` |
 
-**발급 방법:**
-1. https://console.cloud.google.com 에서 프로젝트 생성
-2. Google Calendar API 사용 설정
-3. OAuth 2.0 클라이언트 ID 만들기 (데스크톱 앱)
-4. JSON 다운로드 → `credentials/google_credentials.json`에 저장
-5. 인증 실행:
-   ```bash
-   .venv/bin/python auth_setup.py google
-   ```
-
-**갱신:** access_token 만료 시 스크립트가 자동으로 refresh. 별도 조치 불필요.
-단, Google Cloud 프로젝트가 "테스트" 상태이면 refresh_token이 7일 후 만료될 수 있음 → 프로젝트를 "프로덕션"으로 게시하면 해결.
+```bash
+.venv/bin/python auth_setup.py google
+```
 
 ### 3. KakaoTalk — OAuth 2.0
 
 | 항목 | 내용 |
 |------|------|
-| 방식 | OAuth 2.0 (Authorization Code Flow) + Client Secret |
-| access_token 만료 | ~6시간 |
-| refresh_token 만료 | ~2개월 (60일) |
-| 갱신 | access_token은 자동 갱신. **refresh_token은 수동 재인증 필요** |
-| 저장 위치 | `.env` → `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET`, `credentials/kakao_token.json` (토큰) |
+| 방식 | OAuth 2.0 + Client Secret |
+| access_token | 자동 갱신 (~6시간) |
+| refresh_token | **수동 재인증 필요** (~2개월) |
+| 저장 위치 | `.env`, `credentials/kakao_token.json` |
 
-**발급 방법:**
-1. https://developers.kakao.com 에서 앱 생성
-2. 플랫폼 → Web에 `http://localhost:9876` 추가
-3. 카카오 로그인 활성화 + Redirect URI에 `http://localhost:9876/callback` 추가
-4. 동의항목 → `카카오톡 메시지 전송(talk_message)` 선택
-5. `.env`에 `KAKAO_REST_API_KEY`, `KAKAO_CLIENT_SECRET` 입력
-6. 인증 실행:
-   ```bash
-   .venv/bin/python auth_setup.py kakao
-   ```
-
-**갱신 (수동):**
-refresh_token 만료 7일 전부터 브리핑 메시지에 경고가 표시된다. 경고가 뜨면:
 ```bash
 .venv/bin/python auth_setup.py kakao
 ```
-브라우저에서 카카오 로그인 → 동의하면 새 토큰이 발급된다.
 
-### 갱신 자동화 로드맵
-
-현재 카카오 refresh_token은 ~2개월마다 수동 재인증이 필요하다. 향후 자동화 방안:
-
-1. **Selenium/Playwright 자동 로그인** — 카카오 로그인 페이지를 헤드리스 브라우저로 자동화하여 refresh_token 만료 전 자동 재발급. 단, 카카오 보안 정책(캡차, 2FA)에 의해 불안정할 수 있음.
-2. **카카오 Admin Key 방식** — REST API 대신 Admin Key를 사용하면 토큰 없이 메시지 전송 가능. 단, "나에게 보내기"는 지원하지 않아 친구 목록 기반 전송으로 변경 필요.
-3. **만료 전 자동 갱신 최적화** — refresh_token 갱신 시 새 refresh_token이 내려오면 만료 기한이 리셋됨. 현재도 access_token 갱신 시 조건부로 처리하고 있으나, 만료 30일 전부터 의도적으로 갱신 요청을 보내 refresh_token 수명을 연장하는 로직 추가 가능.
+친구 메시지 전송 시 카카오 동의항목에 `friends` 스코프 추가 필요.
 
 ## 실행
 
 ```bash
-# 수동 실행
-.venv/bin/python morning_briefing.py
-
-# 평일만
-.venv/bin/python morning_briefing.py --weekday-only
-
-# 주말만
-.venv/bin/python morning_briefing.py --weekend-only
+.venv/bin/python morning_briefing.py              # 전체
+.venv/bin/python morning_briefing.py --weekday-only  # 평일만
+.venv/bin/python morning_briefing.py --weekend-only  # 주말만
 ```
 
-## 자동 실행 스케줄
+## 자동 실행
 
-`install.sh` 실행 시 macOS launchd에 등록:
+`install.sh` 실행 시 macOS launchd + pmset 예약 깨우기 등록:
 
-- **평일** 05:50
-- **주말** 07:50
+- **평일** 05:48 깨우기 → 05:50 실행
+- **주말** 07:48 깨우기 → 07:50 실행
 
-## 기능 확장 로드맵
+## 로드맵
 
-### Phase 1: 다중 수신자
+### 구현 완료
+- [x] 다중 수신자 (self + friend)
+- [x] 수신자별 섹션 on/off
+- [x] 관리 웹 UI (FastAPI + Jinja2)
+- [x] 미세먼지 (OpenWeatherMap Air Pollution)
+- [x] 뉴스 헤드라인 (Google News RSS)
+- [x] 주간 날씨 (월요일)
+- [x] 아기 성장 (월령, 발달, 돌 카운트다운)
+- [x] 요일별 커스텀 알림
+- [x] 네트워크 대기 (잠자기 후 Wi-Fi 복구)
 
-현재는 "나에게 보내기"만 지원. 여러 사람에게 보낼 수 있도록 확장.
-
-- **수신자 관리** — `recipients.json`에 수신자별 설정 저장 (이름, 카카오 토큰, 위치, 운동 키워드, 알림 시간)
-- **카카오 친구 메시지** — "나에게 보내기" 대신 `v1/api/talk/friends/message/default/send` API로 친구에게 전송
-- **수신자별 캘린더** — 각 수신자의 Google Calendar 연동 (또는 본인 캘린더만 공유)
-- **수신자별 위치** — 판교 고정이 아닌 수신자별 날씨 위치 설정
-
-### Phase 2: 관리 웹 UI
-
-수신자와 설정을 관리하는 간단한 웹 대시보드.
-
-- **기술 스택** — FastAPI + Jinja2 (또는 Next.js). 로컬에서 돌리므로 가볍게
-- **수신자 CRUD** — 수신자 추가/수정/삭제, 카카오 OAuth 연동 버튼
-- **메시지 미리보기** — 현재 설정으로 생성될 브리핑 메시지 미리보기
-- **수동 전송** — 특정 수신자에게 즉시 전송 버튼
-- **전송 이력** — 날짜별 전송 성공/실패 로그 조회
-- **설정 편집** — 운동 키워드, 알림 시간, 위치 등을 UI에서 수정
-
-### Phase 3: 콘텐츠 확장
-
-브리핑에 포함할 정보 추가.
-
-- **미세먼지** — 에어코리아 API로 PM2.5/PM10 + 마스크 권고
-- **출근 소요시간** — 카카오맵 길찾기 API로 실시간 교통 반영 예상 시간
-- **뉴스 헤드라인** — 주요 뉴스 3-5건 요약
-- **주간 날씨 요약** — 월요일 브리핑에 이번 주 날씨 트렌드 추가
-- **D-day** — 중요 일정까지 남은 일수 표시
-
-### Phase 4: 인프라 고도화
-
-로컬 macOS 의존에서 벗어나 안정적 운영.
-
-- **서버 이전** — Raspberry Pi 또는 클라우드 (AWS Lambda / GCP Cloud Functions)
-- **알림 채널 다양화** — 슬랙, 텔레그램, 이메일 등 채널 추가
-- **모니터링** — 연속 실패 시 별도 채널로 알림
-- **카카오 토큰 자동 갱신** — Playwright 헤드리스 브라우저로 refresh_token 자동 재발급
+### 예정
+- [ ] 아기 발달 코퍼스 고도화 (이유식 메뉴, 놀이법, 건강검진 알림)
+- [ ] 수신자 본인 토큰으로 "나에게 보내기" 방식 지원
+- [ ] 뉴스 소스 다양화 (Naver News API, NewsAPI.org)
+- [ ] 출근 소요시간 (카카오맵 길찾기 API)
+- [ ] 카카오 토큰 자동 갱신 (Playwright)
+- [ ] 서버 이전 (AWS Lambda / GCP Cloud Functions)
+- [ ] 알림 채널 다양화 (슬랙, 텔레그램)
+- [ ] 모니터링 (연속 실패 시 별도 알림)
