@@ -3,7 +3,9 @@
 
 import json
 import logging
+import socket
 import sys
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -281,6 +283,20 @@ def build_message(events, workout_info, weather):
     return "\n".join(lines)
 
 
+# ── Network ─────────────────────────────────────────────────────
+
+def wait_for_network(max_wait=120, interval=5):
+    """네트워크 연결을 기다린다. 잠자기에서 깨어난 직후 Wi-Fi 복구 대기용."""
+    for i in range(max_wait // interval):
+        try:
+            socket.create_connection(("8.8.8.8", 53), timeout=3).close()
+            return True
+        except OSError:
+            log.info("네트워크 대기 중... (%d초)", (i + 1) * interval)
+            time.sleep(interval)
+    return False
+
+
 # ── Main ─────────────────────────────────────────────────────────
 
 def main():
@@ -293,6 +309,10 @@ def main():
     if "--weekend-only" in sys.argv and not is_weekend:
         log.info("평일이라 스킵 (weekend-only)")
         return
+
+    if not wait_for_network():
+        log.error("네트워크 연결 실패 - 종료")
+        sys.exit(1)
 
     log.info("Morning Briefing 시작")
 
