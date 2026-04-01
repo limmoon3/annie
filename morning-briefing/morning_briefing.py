@@ -50,8 +50,7 @@ log = logging.getLogger(__name__)
 
 def get_google_calendar_service():
     if not GOOGLE_TOKEN_FILE.exists():
-        log.error("Google token 없음. `python auth_setup.py google` 실행 필요")
-        sys.exit(1)
+        raise FileNotFoundError("Google token 없음. `python auth_setup.py google` 실행 필요")
 
     creds = Credentials.from_authorized_user_file(str(GOOGLE_TOKEN_FILE), GOOGLE_SCOPES)
 
@@ -212,17 +211,22 @@ def build_message(events, workout_info, weather):
     lines.append("")
 
     # 날씨
-    w = weather
-    lines.append(f"[판교 날씨] {w['desc']}")
-    lines.append(f"  현재 {w['temp']:.0f}도 (체감 {w['feels_like']:.0f}도)")
-    lines.append(f"  최저 {w['temp_min']:.0f}도 / 최고 {w['temp_max']:.0f}도")
-    lines.append(f"  습도 {w['humidity']}%")
-    if w["rain"]:
-        lines.append("  비 예보 있음! 우산 챙기세요")
+    if weather:
+        w = weather
+        lines.append(f"[판교 날씨] {w['desc']}")
+        lines.append(f"  현재 {w['temp']:.0f}도 (체감 {w['feels_like']:.0f}도)")
+        lines.append(f"  최저 {w['temp_min']:.0f}도 / 최고 {w['temp_max']:.0f}도")
+        lines.append(f"  습도 {w['humidity']}%")
+        if w["rain"]:
+            lines.append("  비 예보 있음! 우산 챙기세요")
+    else:
+        lines.append("[날씨 정보를 가져오지 못했습니다]")
     lines.append("")
 
     # 일정
-    if events:
+    if events is None:
+        lines.append("[캘린더 정보를 가져오지 못했습니다]")
+    elif events:
         lines.append(f"[오늘 일정] {len(events)}건")
         for ev in events:
             start = ev.get("start", {})
@@ -250,16 +254,34 @@ def main():
 
     log.info("Morning Briefing 시작")
 
-    service = get_google_calendar_service()
-    events = get_today_events(service)
-    workout_info = check_workout(events)
-    weather = get_weather()
+    events = None
+    workout_info = (False, None, None)
+    try:
+        service = get_google_calendar_service()
+        events = get_today_events(service)
+        workout_info = check_workout(events)
+    except Exception as e:
+        log.error("캘린더 조회 실패: %s", e)
+
+    weather = None
+    try:
+        weather = get_weather()
+    except Exception as e:
+        log.error("날씨 조회 실패: %s", e)
+
+    if events is None and weather is None:
+        log.error("캘린더, 날씨 모두 실패 - 전송 포기")
+        sys.exit(1)
 
     message = build_message(events, workout_info, weather)
     log.info("메시지 생성 완료:\n%s", message)
 
-    send_kakao(message)
-    log.info("카카오톡 전송 완료!")
+    try:
+        send_kakao(message)
+        log.info("카카오톡 전송 완료!")
+    except Exception as e:
+        log.error("카카오톡 전송 실패: %s", e)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
