@@ -125,6 +125,26 @@ def get_weather():
     }
 
 
+def get_clothing_recommendation(temp):
+    """기온별 옷차림 추천"""
+    if temp >= 28:
+        return "민소매, 반팔, 반바지"
+    elif temp >= 23:
+        return "반팔, 얇은 셔츠"
+    elif temp >= 20:
+        return "긴팔, 얇은 가디건"
+    elif temp >= 17:
+        return "니트, 맨투맨, 가디건"
+    elif temp >= 12:
+        return "자켓, 가디건, 야상"
+    elif temp >= 9:
+        return "코트, 점퍼"
+    elif temp >= 4:
+        return "패딩, 두꺼운 코트"
+    else:
+        return "방한용품 필수, 패딩"
+
+
 # ── KakaoTalk ────────────────────────────────────────────────────
 
 def load_kakao_token():
@@ -219,6 +239,9 @@ def build_message(events, workout_info, weather):
         lines.append(f"  습도 {w['humidity']}%")
         if w["rain"]:
             lines.append("  비 예보 있음! 우산 챙기세요")
+        lines.append("")
+        clothing = get_clothing_recommendation(w["feels_like"])
+        lines.append(f"[옷차림 추천] {clothing}")
     else:
         lines.append("[날씨 정보를 가져오지 못했습니다]")
     lines.append("")
