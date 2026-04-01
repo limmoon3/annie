@@ -1,5 +1,7 @@
 .env
 credentials/
+recipients.json
+send_history.json
 *.log
 __pycache__/
 .venv/

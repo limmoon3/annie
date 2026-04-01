@@ -1,0 +1,37 @@
+{
+  "나": {
+    "send_method": "self",
+    "sections": {
+      "weather": true,
+      "air_quality": true,
+      "clothing": true,
+      "calendar": true,
+      "workout": true,
+      "reminder": true,
+      "baby": true,
+      "news": true,
+      "weekly_weather": true
+    },
+    "location": {"lat": 37.3947, "lon": 127.1112, "name": "판교"},
+    "workout_keywords": ["필라테스", "운동", "헬스", "gym"],
+    "weekly_reminders": {"3": ["목요일 알림 예시"]}
+  },
+  "남편": {
+    "send_method": "friend",
+    "kakao_uuid": "친구_UUID_입력",
+    "sections": {
+      "weather": true,
+      "air_quality": true,
+      "clothing": true,
+      "calendar": false,
+      "workout": false,
+      "reminder": false,
+      "baby": true,
+      "news": true,
+      "weekly_weather": true
+    },
+    "location": {"lat": 37.3947, "lon": 127.1112, "name": "판교"},
+    "workout_keywords": [],
+    "weekly_reminders": {}
+  }
+}
