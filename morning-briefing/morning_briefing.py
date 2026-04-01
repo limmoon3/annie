@@ -171,9 +171,28 @@ def refresh_kakao_token(token_data):
     token_data["access_token"] = new["access_token"]
     if "refresh_token" in new:
         token_data["refresh_token"] = new["refresh_token"]
+        token_data["refresh_token_expires_in"] = new.get("refresh_token_expires_in", 5183999)
+        token_data["token_obtained_at"] = datetime.now(KST).isoformat()
 
     KAKAO_TOKEN_FILE.write_text(json.dumps(token_data, indent=2))
     return token_data["access_token"]
+
+
+def get_refresh_token_remaining_days():
+    """refresh_token 만료까지 남은 일수 반환. 계산 불가 시 None."""
+    try:
+        token_data = load_kakao_token()
+        obtained_at_str = token_data.get("token_obtained_at")
+        expires_in = token_data.get("refresh_token_expires_in")
+        if not obtained_at_str or not expires_in:
+            return None
+        obtained_at = datetime.fromisoformat(obtained_at_str)
+        if obtained_at.tzinfo is None:
+            obtained_at = obtained_at.replace(tzinfo=KST)
+        expiry = obtained_at + timedelta(seconds=expires_in)
+        return (expiry - datetime.now(KST)).days
+    except Exception:
+        return None
 
 
 def send_kakao(message):
@@ -297,6 +316,12 @@ def main():
         sys.exit(1)
 
     message = build_message(events, workout_info, weather)
+
+    remaining_days = get_refresh_token_remaining_days()
+    if remaining_days is not None and remaining_days <= 7:
+        message += f"\n\n[경고] 카카오 refresh_token 만료 {remaining_days}일 전! `python auth_setup.py kakao` 재인증 필요"
+        log.warning("카카오 refresh_token %d일 후 만료", remaining_days)
+
     log.info("메시지 생성 완료:\n%s", message)
 
     try:

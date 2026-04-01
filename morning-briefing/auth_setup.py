@@ -4,6 +4,7 @@
 import json
 import os
 import sys
+from datetime import datetime
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -113,6 +114,7 @@ def setup_kakao():
     resp.raise_for_status()
     token_data = resp.json()
 
+    token_data["token_obtained_at"] = datetime.now().isoformat()
     KAKAO_TOKEN_FILE.write_text(json.dumps(token_data, indent=2))
     print("✅ 카카오톡 인증 완료! 토큰 저장됨")
     print(f"   access_token 만료: ~6시간")
