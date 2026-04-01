@@ -91,7 +91,13 @@ cat > "$PLIST_DIR/com.morning-briefing.weekend.plist" <<EOF
 </plist>
 EOF
 
-# 5. launchd 등록
+# 5. 맥 예약 깨우기 (브리핑 2분 전)
+echo "→ 맥 예약 깨우기 설정 (평일 05:48, 주말 07:48)..."
+sudo pmset repeat wakeorpoweron MTWRF 05:48:00 wakeorpoweron SS 07:48:00 \
+    && echo "  완료" \
+    || echo "  ⚠️  실패 - 수동으로 설정하세요: sudo pmset repeat wakeorpoweron MTWRF 05:48:00 wakeorpoweron SS 07:48:00"
+
+# 7. launchd 등록
 launchctl unload "$PLIST_DIR/com.morning-briefing.weekday.plist" 2>/dev/null || true
 launchctl unload "$PLIST_DIR/com.morning-briefing.weekend.plist" 2>/dev/null || true
 launchctl load "$PLIST_DIR/com.morning-briefing.weekday.plist"
