@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Morning Briefing{% endblock %}
+{% block content %}
+<h1>Morning Briefing</h1>
+
+{% if weather or baby %}
+<div class="grid">
+    {% if weather %}
+    <div class="card weather-mini">
+        <h3>오늘 날씨</h3>
+        <div class="temp">{{ weather.temp | round }}도</div>
+        <div>{{ weather.desc }} / 체감 {{ weather.feels_like | round }}도</div>
+        <div>최저 {{ weather.temp_min | round }}도 / 최고 {{ weather.temp_max | round }}도</div>
+        {% if weather.rain %}<div style="color: var(--accent);">비 예보 있음</div>{% endif %}
+        {% if air %}
+        <div style="margin-top: 8px;">미세먼지 PM2.5 {{ air.pm25 | round }} ({{ air.pm25_grade }})</div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% if baby %}
+    <div class="card baby-card">
+        <h3>아기 성장</h3>
+        <div class="months">생후 {{ baby.months }}개월 {{ baby.days }}일</div>
+        {% if baby.milestone %}<div>{{ baby.milestone }}</div>{% endif %}
+        {% if baby.d_day > 0 %}<div>돌까지 D-{{ baby.d_day }}</div>{% endif %}
+        {% if baby.special %}<div style="font-weight:600; margin-top:4px;">{{ baby.special }}</div>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<h2>수신자</h2>
+<div class="grid">
+    {% for name, r in recipients.items() %}
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;">{{ name }}</h3>
+            <span class="badge {% if r.send_method == 'self' %}badge-self{% else %}badge-friend{% endif %}">
+                {{ r.send_method }}
+            </span>
+        </div>
+        <div style="margin-top:8px; font-size:14px; color:var(--muted);">
+            {{ r.location.name if r.location else '위치 미설정' }}
+        </div>
+        <div style="margin-top:4px; font-size:13px;">
+            {% for s, enabled in r.sections.items() if enabled %}
+            <span style="background:var(--bg); padding:2px 6px; border-radius:4px; margin:2px; display:inline-block;">{{ s }}</span>
+            {% endfor %}
+        </div>
+        <div class="actions">
+            <a href="/recipient/{{ name }}" class="btn btn-outline btn-sm">설정</a>
+            <a href="/preview/{{ name }}" class="btn btn-outline btn-sm">미리보기</a>
+            <form action="/send/{{ name }}" method="post" style="display:inline;" onsubmit="return confirm('{{ name }}에게 지금 전송할까요?');">
+                <button type="submit" class="btn btn-primary btn-sm">전송</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <h3>수신자 추가</h3>
+    <form action="/recipient/add" method="post" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+        <div>
+            <label>이름</label>
+            <input type="text" name="name" required style="width:120px;">
+        </div>
+        <div>
+            <label>전송 방식</label>
+            <select name="send_method" style="width:120px;">
+                <option value="self">나에게 보내기</option>
+                <option value="friend">친구 메시지</option>
+            </select>
+        </div>
+        <div>
+            <label>위치명</label>
+            <input type="text" name="loc_name" value="판교" style="width:100px;">
+        </div>
+        <div>
+            <label>위도</label>
+            <input type="number" name="lat" value="37.3947" step="0.0001" style="width:120px;">
+        </div>
+        <div>
+            <label>경도</label>
+            <input type="number" name="lon" value="127.1112" step="0.0001" style="width:120px;">
+        </div>
+        <button type="submit" class="btn btn-primary">추가</button>
+    </form>
+</div>
+
+{% if recent_history %}
+<h2>최근 전송 이력</h2>
+<div class="card">
+    <table>
+        <tr><th>시간</th><th>수신자</th><th>결과</th><th>내용</th></tr>
+        {% for h in recent_history %}
+        <tr>
+            <td>{{ h.timestamp[:16] }}</td>
+            <td>{{ h.recipient }}</td>
+            <td><span class="badge {% if h.success %}badge-success{% else %}badge-fail{% endif %}">{{ '성공' if h.success else '실패' }}</span></td>
+            <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ h.message_preview[:50] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endif %}
+{% endblock %}

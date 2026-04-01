@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ name }} 미리보기 - Morning Briefing{% endblock %}
+{% block content %}
+<h1>{{ name }} 메시지 미리보기</h1>
+
+<div class="card">
+    <pre class="message">{{ message }}</pre>
+</div>
+
+<div class="actions">
+    <a href="/recipient/{{ name }}" class="btn btn-outline">설정으로</a>
+    <form action="/send/{{ name }}" method="post" style="display:inline;" onsubmit="return confirm('{{ name }}에게 지금 전송할까요?');">
+        <button type="submit" class="btn btn-primary">지금 전송</button>
+    </form>
+</div>
+{% endblock %}

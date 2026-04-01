@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ name }} 설정 - Morning Briefing{% endblock %}
+{% block content %}
+<h1>{{ name }} 설정</h1>
+
+<form action="/recipient/{{ name }}/update" method="post">
+    <div class="card">
+        <h3>콘텐츠 섹션</h3>
+        <div class="toggle-group">
+            {% for key, label in all_sections %}
+            <label>
+                <input type="checkbox" name="section_{{ key }}" {% if recipient.sections.get(key) %}checked{% endif %}>
+                {{ label }}
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>위치</h3>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:100px;">
+                <label>위치명</label>
+                <input type="text" name="loc_name" value="{{ recipient.location.name if recipient.location else '' }}">
+            </div>
+            <div style="flex:1; min-width:100px;">
+                <label>위도</label>
+                <input type="text" name="lat" value="{{ recipient.location.lat if recipient.location else '' }}">
+            </div>
+            <div style="flex:1; min-width:100px;">
+                <label>경도</label>
+                <input type="text" name="lon" value="{{ recipient.location.lon if recipient.location else '' }}">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>운동 키워드</h3>
+        <label>쉼표로 구분</label>
+        <input type="text" name="workout_keywords" value="{{ recipient.workout_keywords | join(', ') if recipient.workout_keywords else '' }}">
+    </div>
+
+    <div class="card">
+        <h3>전송 정보</h3>
+        <div class="info-row">
+            <span class="info-label">전송 방식</span>
+            <span>{{ recipient.send_method }}</span>
+        </div>
+        {% if recipient.send_method == 'friend' %}
+        <div class="info-row">
+            <span class="info-label">kakao_uuid</span>
+            <span>{{ recipient.kakao_uuid or '미설정' }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="actions">
+        <button type="submit" class="btn btn-primary">저장</button>
+        <a href="/preview/{{ name }}" class="btn btn-outline">미리보기</a>
+        <a href="/recipient/{{ name }}/delete" class="btn btn-danger" onclick="return confirm('{{ name }}을(를) 삭제할까요?');">삭제</a>
+    </div>
+</form>
+{% endblock %}

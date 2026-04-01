@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}전송 이력 - Morning Briefing{% endblock %}
+{% block content %}
+<h1>전송 이력</h1>
+
+<div class="card">
+    {% if history %}
+    <table>
+        <tr><th>시간</th><th>수신자</th><th>결과</th><th>내용</th></tr>
+        {% for h in history %}
+        <tr>
+            <td>{{ h.timestamp[:16] }}</td>
+            <td>{{ h.recipient }}</td>
+            <td><span class="badge {% if h.success %}badge-success{% else %}badge-fail{% endif %}">{{ '성공' if h.success else '실패' }}</span></td>
+            <td style="max-width:400px;">{{ h.message_preview }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p style="color:var(--muted);">전송 이력이 없습니다.</p>
+    {% endif %}
+</div>
+{% endblock %}

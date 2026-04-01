@@ -1,0 +1,146 @@
+:root {
+    --bg: #f5f5f7;
+    --card: #fff;
+    --text: #1d1d1f;
+    --muted: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ED;
+    --border: #d2d2d7;
+    --success: #34c759;
+    --danger: #ff3b30;
+    --warning: #ff9500;
+    --radius: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 24px;
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 24px; }
+h2 { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
+h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+.badge-self { background: #e8f5e9; color: #2e7d32; }
+.badge-friend { background: #e3f2fd; color: #1565c0; }
+.badge-success { background: #e8f5e9; color: #2e7d32; }
+.badge-fail { background: #ffebee; color: #c62828; }
+
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); text-decoration: none; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #e0342b; text-decoration: none; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { background: var(--bg); text-decoration: none; }
+.btn-sm { padding: 4px 12px; font-size: 13px; }
+
+.actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 12px;
+}
+
+label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.toggle-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.toggle-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 400;
+}
+.toggle-group input[type="checkbox"] { accent-color: var(--accent); }
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--bg);
+    font-size: 14px;
+}
+.info-row:last-child { border-bottom: none; }
+.info-label { color: var(--muted); }
+
+pre.message {
+    background: var(--bg);
+    padding: 16px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 14px;
+    line-height: 1.6;
+    font-family: -apple-system, sans-serif;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--bg); }
+th { color: var(--muted); font-weight: 500; font-size: 13px; }
+
+.nav { margin-bottom: 24px; display: flex; gap: 16px; align-items: center; }
+.nav a { font-weight: 500; }
+
+.weather-mini { font-size: 14px; }
+.weather-mini .temp { font-size: 24px; font-weight: 600; }
+
+.baby-card { background: linear-gradient(135deg, #fce4ec, #f3e5f5); }
+.baby-card .months { font-size: 24px; font-weight: 700; color: #ad1457; }
