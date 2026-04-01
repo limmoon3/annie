@@ -32,8 +32,9 @@ GOOGLE_SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
 WORKOUT_KEYWORDS = [
     "운동", "헬스", "gym", "workout", "fitness", "수영", "러닝", "달리기",
-    "크로스핏", "필라테스", "필테", "요가", "yoga", "climbing", "클라이밍", "풋살",
-    "테니스", "배드민턴", "골프", "등산", "조깅", "PT", "웨이트",
+    "크로스핏", "필라테스", "필테", "뤼트", "광교", "요가", "yoga",
+    "climbing", "클라이밍", "풋살", "테니스", "배드민턴", "골프", "등산",
+    "조깅", "PT", "웨이트",
 ]
 
 LOG_FILE = BASE_DIR / "morning_briefing.log"
@@ -83,7 +84,7 @@ def get_today_events(service):
 def check_workout(events):
     for event in events:
         summary = event.get("summary", "").lower()
-        if any(kw in summary for kw in WORKOUT_KEYWORDS):
+        if any(kw.lower() in summary for kw in WORKOUT_KEYWORDS):
             start_dt = event.get("start", {}).get("dateTime", "")
             return True, event.get("summary", ""), start_dt
     return False, None, None
