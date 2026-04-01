@@ -32,6 +32,11 @@ PANGYO_LON = 127.1112
 KST = ZoneInfo("Asia/Seoul")
 GOOGLE_SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
+# 요일별 알림 (0=월, 1=화, ..., 6=일)
+WEEKLY_REMINDERS = {
+    3: ["아기 선생님 주차등록"],  # 목요일
+}
+
 WORKOUT_KEYWORDS = [
     "운동", "헬스", "gym", "workout", "fitness", "수영", "러닝", "달리기",
     "크로스핏", "필라테스", "필테", "뤼트", "광교", "요가", "yoga",
@@ -127,8 +132,43 @@ def get_weather():
     }
 
 
+def get_air_quality():
+    """OpenWeatherMap Air Pollution API로 미세먼지 정보 조회"""
+    resp = requests.get(
+        "https://api.openweathermap.org/data/2.5/air_pollution",
+        params={
+            "lat": PANGYO_LAT,
+            "lon": PANGYO_LON,
+            "appid": OPENWEATHER_API_KEY,
+        },
+        timeout=10,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+
+    components = data["list"][0]["components"]
+    pm25 = components.get("pm2_5", 0)
+    pm10 = components.get("pm10", 0)
+
+    def grade(val, thresholds):
+        if val <= thresholds[0]:
+            return "좋음"
+        elif val <= thresholds[1]:
+            return "보통"
+        elif val <= thresholds[2]:
+            return "나쁨"
+        return "매우나쁨"
+
+    return {
+        "pm25": pm25,
+        "pm25_grade": grade(pm25, [15, 35, 75]),
+        "pm10": pm10,
+        "pm10_grade": grade(pm10, [30, 80, 150]),
+    }
+
+
 def get_clothing_recommendation(temp):
-    """기온별 옷차림 추천"""
+    """기온별 옷차림 추천 (실제 기온 기준)"""
     if temp >= 28:
         return "민소매, 반팔, 반바지"
     elif temp >= 23:
@@ -140,8 +180,10 @@ def get_clothing_recommendation(temp):
     elif temp >= 12:
         return "자켓, 가디건, 야상"
     elif temp >= 9:
-        return "코트, 점퍼"
-    elif temp >= 4:
+        return "자켓, 코트"
+    elif temp >= 5:
+        return "코트, 두꺼운 점퍼"
+    elif temp >= 0:
         return "패딩, 두꺼운 코트"
     else:
         return "방한용품 필수, 패딩"
@@ -236,12 +278,19 @@ def fmt_time(dt_str):
     return datetime.fromisoformat(dt_str).strftime("%H:%M")
 
 
-def build_message(events, workout_info, weather):
+def build_message(events, workout_info, weather, air_quality=None):
     now = datetime.now(KST)
     weekday_kr = ["월", "화", "수", "목", "금", "토", "일"][now.weekday()]
     header = f"{now.strftime('%m/%d')} ({weekday_kr}) 모닝 브리핑"
 
     lines = [header, ""]
+
+    # 요일 알림
+    reminders = WEEKLY_REMINDERS.get(now.weekday(), [])
+    if reminders:
+        for r in reminders:
+            lines.append(f"[알림] {r}")
+        lines.append("")
 
     # 운동복
     has_workout, name, time = workout_info
@@ -261,11 +310,18 @@ def build_message(events, workout_info, weather):
         if w["rain"]:
             lines.append("  비 예보 있음! 우산 챙기세요")
         lines.append("")
-        clothing = get_clothing_recommendation(w["feels_like"])
+        clothing = get_clothing_recommendation(w["temp"])
         lines.append(f"[옷차림 추천] {clothing}")
     else:
         lines.append("[날씨 정보를 가져오지 못했습니다]")
     lines.append("")
+
+    # 미세먼지
+    if air_quality:
+        aq = air_quality
+        mask = " → 마스크 챙기세요!" if aq["pm25_grade"] in ("나쁨", "매우나쁨") or aq["pm10_grade"] in ("나쁨", "매우나쁨") else ""
+        lines.append(f"[미세먼지] PM2.5 {aq['pm25']:.0f} ({aq['pm25_grade']}) / PM10 {aq['pm10']:.0f} ({aq['pm10_grade']}){mask}")
+        lines.append("")
 
     # 일정
     if events is None:
@@ -331,11 +387,17 @@ def main():
     except Exception as e:
         log.error("날씨 조회 실패: %s", e)
 
+    air_quality = None
+    try:
+        air_quality = get_air_quality()
+    except Exception as e:
+        log.error("미세먼지 조회 실패: %s", e)
+
     if events is None and weather is None:
         log.error("캘린더, 날씨 모두 실패 - 전송 포기")
         sys.exit(1)
 
-    message = build_message(events, workout_info, weather)
+    message = build_message(events, workout_info, weather, air_quality)
 
     remaining_days = get_refresh_token_remaining_days()
     if remaining_days is not None and remaining_days <= 7:
