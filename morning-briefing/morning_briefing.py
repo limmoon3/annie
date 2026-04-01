@@ -24,7 +24,7 @@ load_dotenv(BASE_DIR / ".env")
 GOOGLE_TOKEN_FILE = BASE_DIR / "credentials" / "google_token.json"
 KAKAO_TOKEN_FILE = BASE_DIR / "credentials" / "kakao_token.json"
 RECIPIENTS_FILE = BASE_DIR / "recipients.json"
-BABY_MILESTONES_FILE = BASE_DIR / "baby_milestones.json"
+BABY_CORPUS_FILE = BASE_DIR / "baby_corpus.json"
 SEND_HISTORY_FILE = BASE_DIR / "send_history.json"
 
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
@@ -222,9 +222,9 @@ def get_clothing_recommendation(temp):
 
 # ── Baby ────────────────────────────────────────────────────────
 
-def load_baby_milestones():
-    if BABY_MILESTONES_FILE.exists():
-        return json.loads(BABY_MILESTONES_FILE.read_text())
+def load_baby_corpus():
+    if BABY_CORPUS_FILE.exists():
+        return json.loads(BABY_CORPUS_FILE.read_text())
     return {}
 
 
@@ -253,8 +253,8 @@ def get_baby_info():
     first_birthday = BABY_BIRTHDAY.replace(year=BABY_BIRTHDAY.year + 1)
     d_day = (first_birthday - today).days
 
-    milestones = load_baby_milestones()
-    milestone_text = milestones.get(str(months), {}).get("summary", "")
+    corpus = load_baby_corpus()
+    month_data = corpus.get(str(months), {})
 
     special_message = None
     if d_day == 0:
@@ -268,13 +268,27 @@ def get_baby_info():
     elif days_in_month == 0 and months > 0:
         special_message = f"오늘로 생후 {months}개월이 되었어요!"
 
+    # 매일 다른 팁을 보여주기 위해 일자 기반 로테이션
+    feeding = month_data.get("feeding", {})
+    play_list = month_data.get("play", [])
+    menu_list = feeding.get("menu", [])
+
+    daily_play = play_list[age_days % len(play_list)] if play_list else ""
+    daily_menu = menu_list[age_days % len(menu_list)] if menu_list else ""
+
     return {
         "months": months,
         "days": days_in_month,
         "total_days": age_days,
         "d_day": d_day,
-        "milestone": milestone_text,
+        "milestone": month_data.get("summary", ""),
         "special": special_message,
+        "feeding_stage": feeding.get("stage", ""),
+        "feeding_tip": feeding.get("tips", ""),
+        "daily_menu": daily_menu,
+        "daily_play": daily_play,
+        "health": month_data.get("health", {}),
+        "sleep": month_data.get("sleep", {}),
     }
 
 
@@ -486,6 +500,12 @@ def build_message(name, recipient, data):
             lines.append(f"  {b['special']}")
         if b.get("milestone"):
             lines.append(f"  이 시기: {b['milestone']}")
+        if b.get("daily_play"):
+            lines.append(f"  오늘의 놀이: {b['daily_play']}")
+        if b.get("daily_menu"):
+            lines.append(f"  추천 이유식: {b['daily_menu']}")
+        if b.get("health", {}).get("checkup"):
+            lines.append(f"  건강검진: {b['health']['checkup']}")
         if b["d_day"] > 0:
             lines.append(f"  돌까지 D-{b['d_day']}")
         lines.append("")
