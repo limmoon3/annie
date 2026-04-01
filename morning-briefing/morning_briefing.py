@@ -698,22 +698,31 @@ def main():
     # 선제 갱신: 만료 30일 전부터 refresh_token 자동 연장 시도
     remaining_days = get_refresh_token_remaining_days()
     token_warning = ""
-    if remaining_days is not None and remaining_days <= 30:
-        log.info("refresh_token 만료 %d일 전 → 선제 갱신 시도", remaining_days)
-        try:
-            access_token = refresh_kakao_token(token_data)
-            new_remaining = get_refresh_token_remaining_days()
-            if new_remaining is not None and new_remaining > remaining_days:
-                log.info("refresh_token 선제 갱신 성공! 만료일 리셋 (D-%d → D-%d)", remaining_days, new_remaining)
-            else:
-                log.info("access_token 갱신됨 (refresh_token은 미갱신, D-%d)", remaining_days)
-        except Exception as e:
-            log.error("선제 갱신 실패: %s", e)
+    if remaining_days is not None:
+        # 연장 전날 알림 (D-31)
+        if remaining_days == 31:
+            token_warning = "\n\n[알림] 카카오 토큰 자동 연장이 내일 시도됩니다 (D-31)"
 
-        remaining_days = get_refresh_token_remaining_days()
-        if remaining_days is not None and remaining_days <= 7:
-            token_warning = f"\n\n[경고] 카카오 refresh_token 만료 {remaining_days}일 전! `python auth_setup.py kakao` 재인증 필요"
-            log.warning("카카오 refresh_token %d일 후 만료", remaining_days)
+        # 연장 시도 (D-30 이하)
+        if remaining_days <= 30:
+            log.info("refresh_token 만료 %d일 전 → 선제 갱신 시도", remaining_days)
+            try:
+                access_token = refresh_kakao_token(token_data)
+                new_remaining = get_refresh_token_remaining_days()
+                if new_remaining is not None and new_remaining > remaining_days:
+                    log.info("refresh_token 선제 갱신 성공! (D-%d → D-%d)", remaining_days, new_remaining)
+                    token_warning = f"\n\n[알림] 카카오 토큰 자동 연장 성공! (D-{remaining_days} → D-{new_remaining})"
+                else:
+                    log.info("access_token 갱신됨 (refresh_token은 미갱신, D-%d)", remaining_days)
+                    token_warning = f"\n\n[알림] 카카오 토큰 연장 시도 중 (D-{remaining_days}, refresh_token 미갱신)"
+            except Exception as e:
+                log.error("선제 갱신 실패: %s", e)
+                token_warning = f"\n\n[경고] 카카오 토큰 자동 연장 실패! (D-{remaining_days})"
+
+            remaining_days = get_refresh_token_remaining_days()
+            if remaining_days is not None and remaining_days <= 7:
+                token_warning = f"\n\n[경고] 카카오 refresh_token 만료 {remaining_days}일 전! `python auth_setup.py kakao` 재인증 필요"
+                log.warning("카카오 refresh_token %d일 후 만료", remaining_days)
 
     for name, recipient in recipients.items():
         try:
