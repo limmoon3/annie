@@ -545,21 +545,6 @@ def build_message(name, recipient, data):
         lines.append(f"[미세먼지] PM2.5 {aq['pm25']:.0f} ({aq['pm25_grade']}) / PM10 {aq['pm10']:.0f} ({aq['pm10_grade']}){mask}")
         lines.append("")
 
-    # 주간 날씨 (월요일만)
-    if sections.get("weekly_weather") and now.weekday() == 0 and data.get("weekly_weather"):
-        lines.append("[이번 주 날씨]")
-        for day in data["weekly_weather"]:
-            rain_mark = " 🌧" if day["rain"] else ""
-            lines.append(f"  {day['date']}({day['weekday']}) {day['temp_min']:.0f}~{day['temp_max']:.0f}도 {day['desc']}{rain_mark}")
-        lines.append("")
-
-    # 뉴스
-    if sections.get("news") and data.get("news"):
-        lines.append("[오늘의 뉴스]")
-        for i, headline in enumerate(data["news"], 1):
-            lines.append(f"  {i}. {headline}")
-        lines.append("")
-
     # 일정
     if sections.get("calendar"):
         events = data.get("events")
@@ -574,6 +559,21 @@ def build_message(name, recipient, data):
                 lines.append(f"  {t + ' ' if t else '종일 '}{s}")
         else:
             lines.append("[오늘 일정 없음]")
+        lines.append("")
+
+    # 주간 날씨 (월요일만)
+    if sections.get("weekly_weather") and now.weekday() == 0 and data.get("weekly_weather"):
+        lines.append("[이번 주 날씨]")
+        for day in data["weekly_weather"]:
+            rain_mark = " 🌧" if day["rain"] else ""
+            lines.append(f"  {day['date']}({day['weekday']}) {day['temp_min']:.0f}~{day['temp_max']:.0f}도 {day['desc']}{rain_mark}")
+        lines.append("")
+
+    # 뉴스
+    if sections.get("news") and data.get("news"):
+        lines.append("[오늘의 뉴스]")
+        for i, headline in enumerate(data["news"], 1):
+            lines.append(f"  {i}. {headline}")
 
     return "\n".join(lines).rstrip()
 
