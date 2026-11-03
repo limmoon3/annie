@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>분당지역 고교 진학 종합 분석 시스템</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js Datalabels plugin (막대 그래프 위 숫자 표시용) -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <!-- Pretendard -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+
+    <script src="tailwind-config.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-darkBg text-textMain font-sans antialiased min-h-screen flex flex-col md:flex-row overflow-x-hidden selection:bg-primary selection:text-white">
+<!-- ================ 사이드바 ================ -->
+    <aside class="w-full md:w-96 bg-white md:border-r border-cardBorder flex-shrink-0 z-20 shadow-xl flex flex-col">
+        <!-- 상단: 미래탐구 + MathUp Info 통합 이미지 -->
+        <div class="p-6 border-b border-cardBorder flex flex-col items-center gap-3 bg-gradient-to-br from-white to-slate-50">
+            <img src="assets/img1.jpg" alt="분당미래탐구 - MathUp Info" class="w-auto object-contain" style="max-height: 130px;" />
+
+            <p class="text-[11px] text-textMuted font-bold tracking-wider">분당 18개 고교 종합 분석</p>
+
+            <a href="https://bdh.mirae-academy.co.kr/menu/1245/board/board_list" target="_blank" class="w-full relative inline-flex items-center justify-center px-8 py-3 text-base font-black text-[#4338ca] transition-all duration-300 bg-[#eef2ff] border border-[#4f46e5] rounded-lg hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">✍️ 자유게시판</a>
+            <a href="javascript:void(0)" onclick="window.open('https://bdh.mirae-academy.co.kr/util/popup/sms_apply','문자 수신 신청','width=520, height=790, toolbar=no, menubar=no, status=no');" class="w-full relative inline-flex items-center justify-center px-8 py-3 text-base font-black text-[#4338ca] transition-all duration-300 bg-[#eef2ff] border border-[#4f46e5] rounded-lg hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">💌 문자 수신 신청 하기</a>
+        </div>
+
+        <div class="p-4 flex-1 overflow-y-auto">
+
+            <!-- 1. 어떤 학교가 좋을까? -->
+            <div class="menu-group">
+                <div class="menu-group-title">
+                    <span class="num-badge bg-indigo-100 text-indigo-700">1</span>
+                    <span>어떤 학교가 좋을까?</span>
+                </div>
+                <button class="submenu-btn active" data-tab="quick-find" onclick="switchTab('quick-find')">
+                    <span class="dot"></span>나의 수학 실력에 맞는 학교 찾기
+                </button>
+                <button class="submenu-btn" data-tab="precise-recommend" onclick="switchTab('precise-recommend')">
+                    <span class="dot"></span>나의 성향 분석에 맞춘 학교 찾기
+                </button>
+            </div>
+
+            <!-- 2. 학교별 내신 수준은? -->
+            <div class="menu-group">
+                <div class="menu-group-title">
+                    <span class="num-badge bg-orange-100 text-orange-700">2</span>
+                    <span>학교별 내신 수준은?</span>
+                </div>
+                <button class="submenu-btn" data-tab="math-deep" onclick="switchTab('math-deep')">
+                    <span class="dot"></span>학교별 수학 내신 심층 분석
+                </button>
+                <button class="submenu-btn" data-tab="naesin-difficulty" onclick="switchTab('naesin-difficulty')">
+                    <span class="dot"></span>학교별 내신 난이도 분석
+                </button>
+                <button class="submenu-btn" data-tab="subject-compare" onclick="switchTab('subject-compare')">
+                    <span class="dot"></span>학교별/과목별 내신 비교
+                </button>
+            </div>
+
+            <!-- 3. 각 학교의 대입 실적은? -->
+            <div class="menu-group">
+                <div class="menu-group-title">
+                    <span class="num-badge bg-emerald-100 text-emerald-700">3</span>
+                    <span>각 학교의 대입 실적은?</span>
+                </div>
+                <button class="submenu-btn" data-tab="medical-result" onclick="switchTab('medical-result')">
+                    <span class="dot"></span>의학계열 합격 실적
+                </button>
+                <button class="submenu-btn" data-tab="major-univ-result" onclick="switchTab('major-univ-result')">
+                    <span class="dot"></span>주요 대학 합격 실적
+                </button>
+            </div>
+
+            <!-- 4. 각 학교별 참고 정보 -->
+            <div class="menu-group">
+                <div class="menu-group-title">
+                    <span class="num-badge bg-amber-100 text-amber-700">4</span>
+                    <span>각 학교별 참고 정보</span>
+                </div>
+                <button class="submenu-btn" data-tab="assign-result" onclick="switchTab('assign-result')">
+                    <span class="dot"></span>학교별 배정 결과
+                </button>
+            </div>
+
+            <!-- 연도 필터 (난이도 분석 탭에서만) -->
+            <div class="mt-4 hidden" id="year-filter-section">
+                <p class="text-[11px] font-bold text-textMuted uppercase tracking-wider mb-3 px-2">기준 연도</p>
+                <div class="flex flex-col space-y-1.5 bg-slate-50 p-2 rounded-xl border border-slate-200 shadow-inner">
+                    <button onclick="updateDataYear(2026)" id="btn-2026" class="year-btn bg-white shadow-sm border border-slate-200 text-primary px-3 py-2 text-xs font-bold rounded-lg transition-all text-left">2026 (예상)</button>
+                    <button onclick="updateDataYear(2025)" id="btn-2025" class="year-btn text-textMuted px-3 py-2 text-xs font-medium rounded-lg hover:bg-white hover:text-primary transition-all text-left">2025 (실제)</button>
+                    <button onclick="updateDataYear(2024)" id="btn-2024" class="year-btn text-textMuted px-3 py-2 text-xs font-medium rounded-lg hover:bg-white hover:text-primary transition-all text-left">2024 (실제)</button>
+                    <button onclick="updateDataYear(2023)" id="btn-2023" class="year-btn text-textMuted px-3 py-2 text-xs font-medium rounded-lg hover:bg-white hover:text-primary transition-all text-left">2023 (실제)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 하단: MathUp 로고 -->
+        <div class="p-4 border-t border-cardBorder flex flex-col items-center gap-2 bg-gradient-to-b from-white to-slate-50">
+            <img src="assets/img2.jpg" alt="MathUp" class="h-9 w-auto object-contain" />
+            <span class="text-[10px] text-textMuted font-medium">© 2026 MathUp. All rights reserved.</span>
+        </div>
+    </aside>
+
+    <!-- ================ 메인 ================ -->
+    <main class="flex-1 h-screen overflow-y-auto scroll-smooth">
+        <div class="p-4 md:p-8 max-w-7xl mx-auto relative content-wrapper">
+
+            <!-- ===================================================== -->
+            <!-- 1-1) 나에게 맞는 학교 찾기 (Quick Find) -->
+            <!-- ===================================================== -->
+            <div id="view-quick-find" class="space-y-6 transition-opacity duration-300">
+                <div class="flex flex-col md:flex-row justify-between items-end gap-4 animate-fade-in">
+                    <div>
+                        <p class="text-[11px] font-bold text-indigo-500 mb-1">[1. 어떤 학교가 좋을까?]</p>
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-slate-800 mb-2">나에게 맞는 학교 찾기</h2>
+                        <p class="text-textMuted font-medium">학생의 수학 실력과 풀이 성향만 입력하면 빠르게 적합한 학교를 추천합니다.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                    <!-- Profiler -->
+                    <section id="profiler" class="lg:col-span-5 flex flex-col space-y-6 animate-slide-up" style="animation-delay: 0.1s;">
+                        <div class="glass-card rounded-3xl p-8 shadow-xl relative overflow-hidden flex-1 border border-slate-100">
+                            <div class="absolute -top-20 -right-20 w-48 h-48 bg-primary/5 rounded-full mix-blend-multiply filter blur-3xl opacity-50 pointer-events-none"></div>
+                            <div class="flex items-center gap-3 mb-8">
+                                <span class="p-3 bg-indigo-50 text-indigo-600 rounded-xl shadow-sm border border-indigo-100">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </span>
+                                <h3 class="text-xl font-black text-slate-800">수학 실력 및 성향 입력</h3>
+                            </div>
+
+                            <div class="space-y-6 relative z-10">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2.5">수학 실력 및 풀이 성향</label>
+                                    <select id="mathSkill" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-primary focus:border-primary block p-4 outline-none transition-all appearance-none cursor-pointer hover:bg-slate-100/50">
+                                        <option value="elite">최상위권 (킬러/모의고사 변형에 강함)</option>
+                                        <option value="solid">상위권 (개념 탄탄, 응용 가능)</option>
+                                        <option value="careful">중상위권 (성실, 쉬운문제 다 맞힘)</option>
+                                        <option value="struggle">중위권 이하 (연산 실수, 수학 부담감 큼)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2.5">실수 빈도 및 멘탈 수준</label>
+                                    <select id="mistakes" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-primary focus:border-primary block p-4 outline-none transition-all appearance-none cursor-pointer hover:bg-slate-100/50">
+                                        <option value="low">실수 적음 (검토 능력 뛰어남)</option>
+                                        <option value="high">시간 압박 시 실수 잦음</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2.5">타 과목 성취도</label>
+                                    <select id="otherSubjects" class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-primary focus:border-primary block p-4 outline-none transition-all appearance-none cursor-pointer hover:bg-slate-100/50">
+                                        <option value="strong">타 과목 매우 강함</option>
+                                        <option value="balanced">수학과 비슷한 수준</option>
+                                        <option value="weak">수학 한우물형 (수학 최우선 주력)</option>
+                                    </select>
+                                </div>
+
+                                <button onclick="calculateRecommendation()" class="w-full mt-6 relative inline-flex items-center justify-center px-8 py-4 text-base font-black text-white transition-all duration-300 bg-primary border border-transparent rounded-2xl hover:bg-primaryHover hover:shadow-xl hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                                    AI 매칭 분석 실행
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="recommendationResult" class="hidden">
+                            <div class="bg-emerald-50 rounded-3xl p-8 border border-emerald-100 shadow-lg relative overflow-hidden">
+                                <div class="absolute top-4 right-4 z-10">
+                                    <span class="flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span></span>
+                                </div>
+                                <div id="resultContent" class="relative z-10"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 차트 + 인사이트 -->
+                    <div class="lg:col-span-7 flex flex-col space-y-6">
+                        <div class="glass-card rounded-3xl p-8 animate-slide-up flex flex-col sm:flex-row gap-8 items-center shadow-xl border border-white" style="animation-delay: 0.2s;">
+                            <div class="w-full sm:w-1/3">
+                                <h3 class="text-xs font-black mb-1 text-slate-800 uppercase tracking-widest">과목별 표준편차 비교</h3>
+                                <p class="text-[11px] font-bold text-textMuted mb-4">수학이 결정적인 이유</p>
+                                <div class="h-32 w-full"><canvas id="subjectWeightChart"></canvas></div>
+                            </div>
+                            <div class="w-full sm:w-2/3">
+                                <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-2xl text-sm leading-relaxed text-slate-700 shadow-inner">
+                                    <span class="font-black text-primary mb-2 block">💡 핵심 인사이트</span>
+                                    국어/영어는 상위권 밀집도가 높아 변별력이 낮지만, 수학은 난이도 조절을 통해 <b>표준편차가 20점 이상</b> 벌어지는 유일한 과목입니다. 수학 한 과목에 의해 전체 내신 등급이 좌우될 정도로 변별력이 높은 과목입니다.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-3xl p-8 flex-1 flex flex-col animate-slide-up shadow-xl border border-white" style="animation-delay: 0.3s;">
+                            <h3 class="text-xl font-black text-slate-800 flex items-center gap-2 mb-4">📊 학교별 변별력 지형도 (수학 내신)</h3>
+                            <p class="text-xs font-bold text-textMuted mb-4">X축: 평균 (쉬움→어려움) · Y축: 표준편차 (격차 큼→작음) · 점 클릭 시 학교 상세 분석</p>
+                            <div class="chart-container flex-1 mt-2">
+                                <canvas id="scatterChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- 1-2) 나에게 맞는 학교 추천 (Precise Recommend) - v3.4 -->
+            <!-- ===================================================== -->
+            <div id="view-precise-recommend" class="hidden space-y-6 animate-fade-in">
+                <div class="mb-2">
+                    <p class="text-[11px] font-bold text-indigo-500 mb-1">[1. 어떤 학교가 좋을까?]</p>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-slate-800 mb-2">나에게 맞는 학교 추천 (정밀 진단)</h2>
+                    <p class="text-textMuted font-medium">아래 6단계 점검 설문에 응답하면, 학생에게 가장 적합한 학교 그룹과 1·2·3순위 추천 학교를 알려드립니다.</p>
+                </div>
+
+                <div id="survey-area">
+                    <!-- 1단계 -->
+                    <div class="card mb-6 animate-fade-in">
+                        <div class="step-header"><span class="step-num">1</span><span class="step-title">학업 준비 상태 — 선행 정도</span></div>
+                        <div class="q-block">
+                            <div class="q-label">① 수학 선행 진도</div>
+                            <div class="opt-group" data-q="math">
+                                <button type="button" class="opt-pill" data-v="6">미적분 Ⅱ 완료</button>
+                                <button type="button" class="opt-pill" data-v="5">미적분 Ⅰ 완료</button>
+                                <button type="button" class="opt-pill" data-v="4">대수 완료</button>
+                                <button type="button" class="opt-pill" data-v="3">공통수학 Ⅱ 완료</button>
+                                <button type="button" class="opt-pill" data-v="2">공통수학 Ⅰ 완료</button>
+                                <button type="button" class="opt-pill" data-v="1">현행 진도 학습 중</button>
+                            </div>
+                        </div>
+                        <div class="q-block">
+                            <div class="q-label">② 과학 선행 진도</div>
+                            <div class="opt-group" data-q="sci">
+                                <button type="button" class="opt-pill" data-v="5">과학 Ⅱ 학습 중</button>
+                                <button type="button" class="opt-pill" data-v="4">과학 Ⅰ 학습 중</button>
+                                <button type="button" class="opt-pill" data-v="3">통합과학 심화</button>
+                                <button type="button" class="opt-pill" data-v="2">통합과학 기본</button>
+                                <button type="button" class="opt-pill" data-v="1">현행 진도 학습 중</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 2단계 -->
+                    <div class="card mb-6 animate-fade-in">
+                        <div class="step-header"><span class="step-num">2</span><span class="step-title">학습 환경 상태</span></div>
+                        <div class="q-block">
+                            <div class="q-label">① 가족 분위기</div>
+                            <div class="opt-group" data-q="fam">
+                                <button type="button" class="opt-pill" data-v="3">화목 (정서적 안정 높음)</button>
+                                <button type="button" class="opt-pill" data-v="2">보통</button>
+                                <button type="button" class="opt-pill" data-v="1">불화 (스트레스 잦음)</button>
+                            </div>
+                        </div>
+                        <div class="q-block">
+                            <div class="q-label">② 학생의 사회적 성향</div>
+                            <div class="opt-group" data-q="mbti">
+                                <button type="button" class="opt-pill" data-v="4">강한 외향형 (E)</button>
+                                <button type="button" class="opt-pill" data-v="3">약한 외향형 (e)</button>
+                                <button type="button" class="opt-pill" data-v="2">약한 내향형 (i)</button>
+                                <button type="button" class="opt-pill" data-v="1">강한 내향형 (I)</button>
+                            </div>
+                        </div>
+                        <div class="q-block">
+                            <div class="q-label">③ 환경 민감도</div>
+                            <div class="opt-group" data-q="sense">
+                                <button type="button" class="opt-pill" data-v="1">둔감 (적응력 매우 강함)</button>
+                                <button type="button" class="opt-pill" data-v="2">보통</button>
+                                <button type="button" class="opt-pill" data-v="3">예민 (환경 변화에 민감)</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 3단계 -->
+                    <div class="card mb-6 animate-fade-in">
+                        <div class="step-header"><span class="step-num">3</span><span class="step-title">학업 균형 상태</span></div>
+                        <div class="q-block">
+                            <div class="q-label">① 전체 성적대</div>
+                            <div class="opt-group" data-q="rank">
+                                <button type="button" class="opt-pill" data-v="3">전체 상위권</button>
+                                <button type="button" class="opt-pill" data-v="2">전체 중상위권</button>
+                                <button type="button" class="opt-pill" data-v="1">전체 중위권</button>
+                            </div>
+                        </div>
+                        <div class="q-block">
+                            <div class="q-label">② 강한 과목 영역</div>
+                            <div class="opt-group" data-q="strong">
+                                <button type="button" class="opt-pill" data-v="math">수학·과학 우세</button>
+                                <button type="button" class="opt-pill" data-v="kor">국어·영어 우세</button>
+                                <button type="button" class="opt-pill" data-v="bal">균형형 (큰 차이 없음)</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 4단계 -->
+                    <div class="card mb-6 animate-fade-in">
+                        <div class="step-header"><span class="step-num">4</span><span class="step-title">학생 체력 상태</span></div>
+                        <div class="q-block">
+                            <div class="q-label">① 체력 수준</div>
+                            <div class="opt-group" data-q="stamina">
+                                <button type="button" class="opt-pill" data-v="3">매우 강함 (장시간 학습 가능)</button>
+                                <button type="button" class="opt-pill" data-v="2">일반 수준</button>
+                                <button type="button" class="opt-pill" data-v="1">매우 약함 (피로 누적 빠름)</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 5단계 -->
+                    <div class="card mb-6 animate-fade-in">
+                        <div class="step-header"><span class="step-num">5</span><span class="step-title">대입 지원 전략</span></div>
+                        <div class="q-block">
+                            <div class="q-label">① 우선 대입 전략</div>
+                            <div class="opt-group" data-q="strategy">
+                                <button type="button" class="opt-pill" data-v="susi">수시 집중 (학생부 중심)</button>
+                                <button type="button" class="opt-pill" data-v="bal">정시 균형 (수시·정시 병행)</button>
+                                <button type="button" class="opt-pill" data-v="jeongsi">정시 집중 (수능 중심)</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 6단계 -->
+                    <div class="card mb-6 animate-fade-in">
+                        <div class="step-header"><span class="step-num">6</span><span class="step-title">통학 가능 범위 (선택)</span></div>
+                        <div class="q-block">
+                            <div class="q-label">① 통학 가능 범위 (체력·등교 거리 종합)</div>
+                            <div class="opt-group" data-q="commute">
+                                <button type="button" class="opt-pill" data-v="all">분당 전 지역 가능</button>
+                                <button type="button" class="opt-pill" data-v="central">분당 중앙 (대진·중앙·한솔·수내·분당)</button>
+                                <button type="button" class="opt-pill" data-v="east">분당 동부 (서현·이매·야탑·영덕·태원·돌마·송림)</button>
+                                <button type="button" class="opt-pill" data-v="west">분당 서부 (낙생·보평·늘푸른·운중·판교)</button>
+                                <button type="button" class="opt-pill" data-v="south">분당 남부 (불곡)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3 items-center justify-center mt-8 mb-2">
+                        <button type="button" id="run-btn" class="btn-primary">진단 실행 →</button>
+                    </div>
+                    <p id="status-msg" class="text-center text-sm text-amber-600 font-semibold h-5"></p>
+                </div>
+
+                <div id="precise-result" class="mt-8 hidden"></div>
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- 2-1) 학교별 수학 내신 심층 분석 (Math Deep) -->
+            <!--      ① 학교별 수학 내신 경향 분석 (표) -->
+            <!--      ② 학교별 변별력 지형도 (산점도) -->
+            <!--      ③ 학교별 수학 내신 비교 (레이더 - 수학 과목 고정) -->
+            <!-- ===================================================== -->
+            <div id="view-math-deep" class="hidden space-y-6 animate-fade-in">
+                <div>
+                    <p class="text-[11px] font-bold text-orange-500 mb-1">[2. 학교별 내신 수준은?]</p>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-slate-800 mb-2">학교별 수학 내신 심층 분석</h2>
+                    <p class="text-textMuted font-medium">분당 18개 고교의 수학 내신 출제 경향, 변별력 지형도, 학교별 수학 성취도 비교를 종합적으로 분석합니다. (좌측 사이드바에서 기준 연도 선택)</p>
+                </div>
+
+                <!-- ① 학교별 수학 내신 경향 분석 (표) -->
+                <section class="bg-white rounded-3xl overflow-hidden flex flex-col h-[520px] shadow-2xl border border-slate-200">
+                    <div class="p-6 border-b border-slate-100 bg-white/80 backdrop-blur-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <h3 class="font-black flex items-center gap-3 text-xl text-slate-800">
+                            <span class="bg-primary text-white w-9 h-9 flex items-center justify-center rounded-xl font-black shadow-lg shadow-primary/20 text-sm">01</span>
+                            학교별 수학 내신 경향 분석 <span class="text-primary bg-primary/10 px-3 py-1 rounded-full text-xs ml-2 font-black" id="tableYearDisplay">2026</span>
+                        </h3>
+                        <span class="text-[11px] text-textMuted font-bold bg-slate-100 px-4 py-2 rounded-full border border-slate-200 shadow-sm">학교를 클릭하여 상세 분석과 대응 전략을 확인하세요.</span>
+                    </div>
+                    <div class="overflow-auto flex-1 custom-scrollbar">
+                        <table class="min-w-full text-sm text-left whitespace-nowrap">
+                            <thead class="text-[11px] text-textMuted uppercase bg-slate-50 sticky top-0 z-10 backdrop-blur-md shadow-sm border-b border-slate-100">
+                                <tr>
+                                    <th scope="col" class="px-6 py-5 font-black tracking-widest">학교명</th>
+                                    <th scope="col" class="px-6 py-5 font-black tracking-widest">평균</th>
+                                    <th scope="col" class="px-6 py-5 font-black tracking-widest">표준편차</th>
+                                    <th scope="col" class="px-6 py-5 font-black tracking-widest">난이도</th>
+                                    <th scope="col" class="px-6 py-5 font-black w-full tracking-widest">출제 특징 (1학기 중간고사 기준)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schoolTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ② 학교별 변별력 지형도 (산점도) -->
+                <section class="bg-white rounded-3xl p-8 flex flex-col shadow-xl border border-white" style="min-height: 460px;">
+                    <h3 class="font-black flex items-center gap-3 text-xl text-slate-800 mb-2">
+                        <span class="bg-primary text-white w-9 h-9 flex items-center justify-center rounded-xl font-black shadow-lg shadow-primary/20 text-sm">02</span>
+                        학교별 변별력 지형도 (수학 내신 산점도)
+                    </h3>
+                    <p class="text-xs font-bold text-textMuted mb-4">X축: 평균 (쉬움→어려움) · Y축: 표준편차 (격차 큼→작음) · 점 클릭 시 상세 분석 모달</p>
+                    <div class="chart-container flex-1 mt-2">
+                        <canvas id="scatterChart2"></canvas>
+                    </div>
+                </section>
+
+                <!-- ③ 학교별 수학 내신 출제 경향 카드 -->
+                <section class="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl">
+                    <h3 class="font-black flex items-center gap-3 text-xl text-slate-800 mb-2">
+                        <span class="bg-primary text-white w-9 h-9 flex items-center justify-center rounded-xl font-black shadow-lg shadow-primary/20 text-sm">03</span>
+                        18개 학교 수학 내신 출제 경향 및 고득점 전략
+                    </h3>
+                    <p class="text-xs font-bold text-textMuted mb-6">위 표(①)에서 학교명을 클릭하면 해당 학교 카드로 자동 스크롤됩니다. 카드를 직접 클릭해도 됩니다.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" id="analysisSchoolsGrid"></div>
+                </section>
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- 2-2) 학교별 내신 난이도 분석 (Naesin Difficulty) -->
+            <!--      → 과목별 순위 + 세부 성취도 표 (subject-compare 상단부) -->
+            <!-- ===================================================== -->
+            <div id="view-naesin-difficulty" class="hidden space-y-6 animate-fade-in pb-12 mt-4 transition-opacity duration-300 relative z-10 w-full min-h-[660px]">
+                <div class="bg-white rounded-[2rem] p-8 md:p-10 shadow-2xl border border-slate-100 relative overflow-hidden">
+                    <div class="absolute -top-24 -left-24 w-72 h-72 bg-gradient-to-br from-indigo-50 to-transparent rounded-full mix-blend-multiply filter blur-3xl pointer-events-none"></div>
+                    <div class="relative z-10">
+                        <div class="flex flex-col lg:flex-row justify-between gap-6 mb-8">
+                            <div>
+                                <p class="text-[11px] font-bold text-orange-500 mb-1">[2. 학교별 내신 수준은?]</p>
+                                <h2 class="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-slate-900 mb-4">학교별 내신 난이도 분석</h2>
+                                <p class="text-slate-500 font-medium max-w-2xl text-base md:text-lg">국어·영어·수학·통합사회·통합과학 학년별 학업 성취도를 학교별로 비교하여 각 학교의 내신 난이도를 한눈에 확인합니다.</p>
+                            </div>
+                            <div class="rounded-[2rem] p-6 bg-slate-50 border border-slate-200 shadow-sm flex flex-col justify-center min-w-[240px]">
+                                <p class="text-[10px] font-black text-textMuted uppercase tracking-widest mb-2">현재 리포트 기준</p>
+                                <p class="text-xl font-black text-slate-800" id="achievementSummaryLabel">2024년 1학년 수학 성취도</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-10">
+                            <div class="bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100 shadow-inner">
+                                <p class="text-[10px] font-black text-textMuted uppercase tracking-widest mb-4">연도 선택</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <button onclick="setAchievementYear(2023)" id="ach-year-2023" class="ach-year-btn px-5 py-2.5 text-sm font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:text-primary transition-all">2023</button>
+                                    <button onclick="setAchievementYear(2024)" id="ach-year-2024" class="ach-year-btn px-5 py-2.5 text-sm font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:text-primary transition-all">2024</button>
+                                    <button onclick="setAchievementYear(2025)" id="ach-year-2025" class="ach-year-btn px-5 py-2.5 text-sm font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:text-primary transition-all">2025</button>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100 shadow-inner">
+                                <p class="text-[10px] font-black text-textMuted uppercase tracking-widest mb-4">학년별 필터</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <button onclick="setAchievementGrade('1학년')" id="ach-grade-1학년" class="ach-grade-btn px-5 py-2.5 text-sm font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:text-primary transition-all">1학년</button>
+                                    <button onclick="setAchievementGrade('2학년')" id="ach-grade-2학년" class="ach-grade-btn px-5 py-2.5 text-sm font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:text-primary transition-all">2학년</button>
+                                    <button onclick="setAchievementGrade('3학년')" id="ach-grade-3학년" class="ach-grade-btn px-5 py-2.5 text-sm font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:text-primary transition-all">3학년</button>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100 shadow-inner">
+                                <label for="achievementSubject" class="text-[10px] font-black text-textMuted uppercase tracking-widest mb-4 block">과목 선택</label>
+                                <select id="achievementSubject" onchange="setAchievementSubject(this.value)" class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary p-3.5 outline-none hover:bg-slate-50 transition-all cursor-pointer">
+                                    <option value="국어">국어</option>
+                                    <option value="영어">영어</option>
+                                    <option value="수학">수학</option>
+                                    <option value="사회">사회</option>
+                                    <option value="과학">과학</option>
+                                </select>
+                                <p class="text-[10px] text-textMuted font-bold mt-3 leading-relaxed">
+                                    ※ 학교알리미 1학기 기준, 표준편차 공개 과목만 집계.<br>
+                                    • <b>국어</b>: 국어, 독서, 문학, 화법과 작문, 언어와 매체<br>
+                                    • <b>영어</b>: 영어, 영어Ⅰ·Ⅱ, 영미문학읽기, 심화영어Ⅰ<br>
+                                    • <b>수학</b>: 수학, 수학Ⅰ·Ⅱ, 미적분, 확률과 통계<br>
+                                    • <b>사회</b>: 통합사회, 한국지리, 세계사, 정치와 법, 윤리와 사상, 세계지리, 사회·문화<br>
+                                    • <b>과학</b>: 통합과학, 과학탐구실험, 물리학Ⅰ·Ⅱ, 화학Ⅰ·Ⅱ, 생명과학Ⅰ·Ⅱ, 지구과학Ⅰ·Ⅱ
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                            <div class="xl:col-span-4 bg-white rounded-3xl p-8 border border-slate-100 shadow-xl min-h-[420px]">
+                                <div class="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h3 class="text-xl font-black text-slate-800">과목별 학교 순위</h3>
+                                        <p class="text-[11px] font-bold text-textMuted">선택한 학년과 과목 기준</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 mb-6">
+                                    <button id="rankBtn-avg" onclick="setRankMetric('avg')" class="rank-metric-btn px-4 py-1.5 text-[11px] font-black rounded-full border border-primary/20 bg-primary text-white transition-all shadow-md shadow-primary/20">평균</button>
+                                    <button id="rankBtn-std" onclick="setRankMetric('std')" class="rank-metric-btn px-4 py-1.5 text-[11px] font-black rounded-full border border-slate-200 bg-slate-50 text-slate-500 hover:text-primary transition-all">표준편차</button>
+                                    <button id="rankBtn-gradeA" onclick="setRankMetric('gradeA')" class="rank-metric-btn px-4 py-1.5 text-[11px] font-black rounded-full border border-slate-200 bg-slate-50 text-slate-500 hover:text-primary transition-all">A등급 비율</button>
+                                </div>
+                                <div id="achievementChartContainer" style="height:320px"><canvas id="achievementRankChart"></canvas></div>
+                            </div>
+                            <div class="xl:col-span-8 bg-white rounded-3xl p-8 border border-slate-100 shadow-xl min-h-[420px] flex flex-col">
+                                <div class="flex items-center justify-between mb-6 flex-shrink-0">
+                                    <div>
+                                        <h3 class="text-xl font-black text-slate-800">학교별 세부 성취도</h3>
+                                        <p class="text-[11px] font-bold text-textMuted">현재 선택된 과목 중심</p>
+                                    </div>
+                                </div>
+                                <div class="overflow-auto flex-1 min-h-0 rounded-[2rem] border border-slate-100 bg-slate-50/30">
+                                    <table class="min-w-full text-sm text-left" id="achievementTable">
+                                        <thead class="text-[10px] text-textMuted uppercase font-black tracking-widest bg-slate-100/80 backdrop-blur-sm sticky top-0 z-10">
+                                            <tr>
+                                                <th class="px-6 py-4">순위</th>
+                                                <th class="px-6 py-4 whitespace-nowrap">학교명</th>
+                                                <th class="px-6 py-4 whitespace-nowrap">평균</th>
+                                                <th class="px-6 py-4 whitespace-nowrap">표준편차</th>
+                                                <th class="px-6 py-4 min-w-[160px]">
+                                                    성취도 분포
+                                                    <div class="flex gap-2 mt-1.5 font-black normal-case">
+                                                        <span class="text-emerald-600">A</span>
+                                                        <span class="text-indigo-600">B</span>
+                                                        <span class="text-yellow-600">C</span>
+                                                        <span class="text-orange-600">D</span>
+                                                        <span class="text-red-600">E</span>
+                                                    </div>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- 2-3) 학교별 / 과목별 내신 비교 (Subject Compare) -->
+            <!--      → 학교 간 다과목 성취도 비교 (레이더) 만 -->
+            <!-- ===================================================== -->
+            <div id="view-subject-compare" class="hidden space-y-6 animate-fade-in pb-12 mt-4 transition-opacity duration-300 relative z-10 w-full min-h-[600px]">
+                <div>
+                    <p class="text-[11px] font-bold text-orange-500 mb-1">[2. 학교별 내신 수준은?]</p>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-slate-800 mb-2">학교별 / 과목별 내신 비교</h2>
+                    <p class="text-textMuted font-medium">국·영·수·통합사회·통합과학 핵심 5과목의 성취도를 학교별로 한눈에 비교합니다. 비교할 학교를 선택하면 레이더 차트가 갱신됩니다.</p>
+                </div>
+
+                <div class="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl flex flex-col min-h-[600px]">
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
+                        <div>
+                            <h3 class="text-2xl font-black text-slate-800 flex items-center gap-3">📈 학교 간 다과목 성취도 비교</h3>
+                            <p class="text-[11px] font-bold text-textMuted mt-1">국/영/수/사/과 핵심 5과목 성취도를 한눈에 비교합니다.</p>
+                        </div>
+                        <div class="flex items-center gap-4 flex-wrap">
+                            <!-- 연도/학년 -->
+                            <div class="flex gap-1.5 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
+                                <button onclick="setSubjCompareYear(2023)" id="subjCompareYear-2023" class="subj-cmp-year px-3 py-1.5 text-[11px] font-black rounded-xl bg-transparent text-slate-500">2023</button>
+                                <button onclick="setSubjCompareYear(2024)" id="subjCompareYear-2024" class="subj-cmp-year px-3 py-1.5 text-[11px] font-black rounded-xl bg-primary text-white">2024</button>
+                                <button onclick="setSubjCompareYear(2025)" id="subjCompareYear-2025" class="subj-cmp-year px-3 py-1.5 text-[11px] font-black rounded-xl bg-transparent text-slate-500">2025</button>
+                            </div>
+                            <div class="flex gap-1.5 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
+                                <button onclick="setSubjCompareGrade('1학년')" id="subjCompareGrade-1학년" class="subj-cmp-grade px-3 py-1.5 text-[11px] font-black rounded-xl bg-primary text-white">1학년</button>
+                                <button onclick="setSubjCompareGrade('2학년')" id="subjCompareGrade-2학년" class="subj-cmp-grade px-3 py-1.5 text-[11px] font-black rounded-xl bg-transparent text-slate-500">2학년</button>
+                                <button onclick="setSubjCompareGrade('3학년')" id="subjCompareGrade-3학년" class="subj-cmp-grade px-3 py-1.5 text-[11px] font-black rounded-xl bg-transparent text-slate-500">3학년</button>
+                            </div>
+                            <!-- 보기 모드 -->
+                            <div class="flex gap-1.5 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
+                                <button onclick="setCompareViewMode('combined')" id="viewModeBtn-combined" class="px-4 py-2 text-[11px] font-black rounded-xl border border-primary/20 bg-primary text-white transition-all shadow-md shadow-primary/10">겹쳐보기</button>
+                                <button onclick="setCompareViewMode('separate')" id="viewModeBtn-separate" class="px-4 py-2 text-[11px] font-black rounded-xl border border-transparent bg-transparent text-slate-500 hover:bg-white hover:text-primary transition-all">따로보기</button>
+                            </div>
+                            <!-- 지표 -->
+                            <div class="flex gap-1.5 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
+                                <button onclick="setCompareMetric('avg')" id="compBtn-avg" class="px-4 py-2 text-[11px] font-black rounded-xl border border-primary/20 bg-primary text-white transition-all shadow-md shadow-primary/10">평균</button>
+                                <button onclick="setCompareMetric('std')" id="compBtn-std" class="px-4 py-2 text-[11px] font-black rounded-xl border border-transparent bg-transparent text-slate-500 hover:bg-white hover:text-primary transition-all">표준편차</button>
+                                <button onclick="setCompareMetric('gradeA')" id="compBtn-gradeA" class="px-4 py-2 text-[11px] font-black rounded-xl border border-transparent bg-transparent text-slate-500 hover:bg-white hover:text-primary transition-all">A등급</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 flex-1">
+                        <div class="lg:col-span-9 flex flex-col sm:flex-row flex-wrap justify-center items-center bg-slate-50/50 rounded-3xl border border-slate-100 p-6 gap-6 shadow-inner" id="radarChartsContainer" style="min-height: 500px;">
+                            <div class="w-full h-full relative" style="min-height: 380px;">
+                                <canvas id="radarCompareChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-3 flex flex-col space-y-6">
+                            <div class="flex items-center justify-between flex-shrink-0">
+                                <h4 class="text-base font-black text-slate-800">비교 대상 학교 선택</h4>
+                                <span class="text-[10px] font-black text-textMuted bg-slate-100 px-3 py-1 rounded-full border border-slate-200">클릭 추가/해제</span>
+                            </div>
+                            <div id="compareSchoolBadges" class="flex flex-wrap gap-2.5 bg-white p-6 rounded-[2rem] border border-slate-100 flex-1 content-start shadow-inner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- 3-1) 학교별 의학계열 합격 실적 -->
+            <!--  - 학년도 1개 선택, 그래프 + 표 -->
+            <!-- ===================================================== -->
+            <div id="view-medical-result" class="hidden space-y-6 animate-fade-in">
+                <div>
+                    <p class="text-[11px] font-bold text-emerald-500 mb-1">[3. 각 학교의 대입 실적은?]</p>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-slate-800 mb-2">학교별 의학계열 합격 실적</h2>
+                    <p class="text-textMuted font-medium">선택한 학년도의 의학계열(전체 또는 서울대) 합격자 수를 학교별로 비교합니다. 합격자 수 내림차순으로 막대 그래프와 표를 함께 제공합니다.</p>
+                    <p class="text-[11px] text-amber-600 mt-1">※ 2026학년도는 가집계 기준 · 누락이나 착오가 있을 수 있으니 정확한 정보는 해당 학교에 문의하세요.</p>
+                </div>
+
+                <!-- 카테고리 (전체/서울대) -->
+                <div class="flex gap-2 flex-wrap">
+                    <button class="med-tab-btn px-5 py-2.5 text-sm font-bold rounded-full bg-primary text-white shadow-md" data-medtab="all" onclick="switchMedTab('all')">전체 의학계열</button>
+                    <button class="med-tab-btn px-5 py-2.5 text-sm font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" data-medtab="snu" onclick="switchMedTab('snu')">서울대 의학계열</button>
+                </div>
+
+                <!-- 학년도 선택 -->
+                <div class="flex gap-3 items-center flex-wrap">
+                    <span class="text-xs font-bold text-textMuted">기준 학년도:</span>
+                    <button class="med-year-btn px-5 py-2.5 text-sm font-bold rounded-full bg-primary text-white shadow-md" data-year="2026" onclick="setMedYear('2026')">2026학년도</button>
+                    <button class="med-year-btn px-5 py-2.5 text-sm font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" data-year="2025" onclick="setMedYear('2025')">2025학년도</button>
+                    <button class="med-year-btn px-5 py-2.5 text-sm font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" data-year="2024" onclick="setMedYear('2024')">2024학년도</button>
+                    <button class="med-year-btn px-5 py-2.5 text-sm font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" data-year="2023" onclick="setMedYear('2023')">2023학년도</button>
+                </div>
+
+                <!-- 색상 범례 (탭에 따라 동적 갱신) -->
+                <div class="flex gap-3 items-center flex-wrap text-[11px]" id="medLegend"></div>
+
+                <!-- 그래프 -->
+                <section class="bg-white rounded-3xl p-8 shadow-xl border border-slate-200">
+                    <h3 class="text-lg font-black text-slate-800 mb-2" id="medGraphTitle">2026학년도 전체 의학계열 합격자</h3>
+                    <p class="text-[11px] text-textMuted font-bold mb-4">막대 길이는 카테고리별 합격자 수 (의예·치의예·한의예·약학·수의예 누적)</p>
+                    <div style="height:720px;">
+                        <canvas id="medChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- 표 -->
+                <section class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50">
+                        <h3 class="text-lg font-black text-slate-800" id="medTableTitle">2026학년도 전체 의학계열 — 학교별 상세</h3>
+                    </div>
+                    <div class="overflow-x-auto max-h-[600px]">
+                        <table class="perf-table" id="medTable"></table>
+                    </div>
+                </section>
+
+                <!-- 인사이트 카드 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gradient-to-br from-indigo-50 to-white p-6 rounded-2xl border border-indigo-100 shadow-md">
+                        <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2" id="med-insight-1-label">선택 학년도 1위</p>
+                        <p class="text-xl font-black text-slate-800" id="med-insight-1">-</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-emerald-50 to-white p-6 rounded-2xl border border-emerald-100 shadow-md">
+                        <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2" id="med-insight-2-label">선택 학년도 2위</p>
+                        <p class="text-xl font-black text-slate-800" id="med-insight-2">-</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-orange-50 to-white p-6 rounded-2xl border border-orange-100 shadow-md">
+                        <p class="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-2" id="med-insight-3-label">선택 학년도 합계</p>
+                        <p class="text-xl font-black text-slate-800" id="med-insight-3">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- 3-2) 학교별 주요 대학 합격 실적 -->
+            <!-- 학년도 + 그룹 1개 선택 → 그래프 + 표 -->
+            <!-- ===================================================== -->
+            <div id="view-major-univ-result" class="hidden space-y-6 animate-fade-in">
+                <div>
+                    <p class="text-[11px] font-bold text-emerald-500 mb-1">[3. 각 학교의 대입 실적은?]</p>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-slate-800 mb-2">학교별 주요 대학 합격 실적</h2>
+                    <p class="text-textMuted font-medium">선택한 학년도와 대학 그룹의 합격자 수를 학교별로 비교합니다. 그룹 합계 내림차순으로 막대 그래프와 표를 함께 제공합니다.</p>
+                </div>
+
+                <!-- 학년도 선택 -->
+                <div class="flex gap-3 items-center flex-wrap">
+                    <span class="text-xs font-bold text-textMuted">기준 학년도:</span>
+                    <button class="univ-year-btn px-5 py-2.5 text-sm font-bold rounded-full bg-primary text-white shadow-md" data-year="2025" onclick="setUnivYear('2025')">2025학년도</button>
+                    <button class="univ-year-btn px-5 py-2.5 text-sm font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" data-year="2024" onclick="setUnivYear('2024')">2024학년도</button>
+                </div>
+
+                <!-- 그룹 토글 -->
+                <div class="flex gap-2 items-center flex-wrap">
+                    <span class="text-xs font-bold text-textMuted mr-2">대학 그룹:</span>
+                    <button class="univ-group-btn px-5 py-2.5 text-sm font-bold rounded-full bg-primary text-white shadow-md" data-group="SKY" onclick="setUnivGroup('SKY')">서연고 (서울대+연세대+고려대)</button>
+                    <button class="univ-group-btn px-5 py-2.5 text-sm font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" data-group="KIST" onclick="setUnivGroup('KIST')">과학기술원 (KAIST·GIST·DGIST·UNIST)</button>
+                    <button class="univ-group-btn px-5 py-2.5 text-sm font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" data-group="SSH" onclick="setUnivGroup('SSH')">성서한이 (성균관대·서강대·한양대·이화여대)</button>
+                    <button class="univ-group-btn px-5 py-2.5 text-sm font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" data-group="JKO" onclick="setUnivGroup('JKO')">중경외시 (중앙대·경희대·한국외대·서울시립대)</button>
+                </div>
+
+                <!-- 색상 범례 (그룹별 자동 갱신) -->
+                <div class="flex gap-3 items-center flex-wrap text-[11px]" id="univLegend"></div>
+
+                <!-- 그래프 -->
+                <section class="bg-white rounded-3xl p-8 shadow-xl border border-slate-200">
+                    <h3 class="text-lg font-black text-slate-800 mb-2" id="univGraphTitle">2025학년도 서연고 합격자</h3>
+                    <p class="text-[11px] text-textMuted font-bold mb-4">막대 길이는 그룹 내 대학별 합격자 수 누적</p>
+                    <div style="height:720px;">
+                        <canvas id="univChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- 표 -->
+                <section class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50">
+                        <h3 class="text-lg font-black text-slate-800" id="univTableTitle">2025학년도 서연고 — 학교별 상세</h3>
+                    </div>
+                    <div class="overflow-x-auto max-h-[600px]">
+                        <table class="perf-table" id="univTable"></table>
+                    </div>
+                </section>
+
+                <!-- 인사이트 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gradient-to-br from-indigo-50 to-white p-6 rounded-2xl border border-indigo-100 shadow-md">
+                        <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2" id="univ-insight-1-label">선택 학년도/그룹 1위</p>
+                        <p class="text-xl font-black text-slate-800" id="univ-insight-1">-</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-emerald-50 to-white p-6 rounded-2xl border border-emerald-100 shadow-md">
+                        <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2" id="univ-insight-2-label">선택 학년도/그룹 2위</p>
+                        <p class="text-xl font-black text-slate-800" id="univ-insight-2">-</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-amber-50 to-white p-6 rounded-2xl border border-amber-100 shadow-md">
+                        <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2" id="univ-insight-total-label">선택 학년도/그룹 18개교 합계</p>
+                        <p class="text-xl font-black text-slate-800" id="univ-insight-total">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- 4-1) 학교별 배정 결과 -->
+            <!-- ===================================================== -->
+            <div id="view-assign-result" class="hidden space-y-6 animate-fade-in">
+                <div>
+                    <p class="text-[11px] font-bold text-amber-500 mb-1">[4. 각 학교별 참고 정보]</p>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-slate-800 mb-2">학교별 배정 결과</h2>
+                    <p class="text-textMuted font-medium">분당 18개 고교의 4년치(2023~2026년) 남·녀 배정 결과 지망 순위를 비교합니다. 학교 선호도와 배정 경쟁률을 한눈에 확인할 수 있습니다.</p>
+                </div>
+
+                <div class="flex gap-3 items-center flex-wrap text-xs">
+                    <span class="font-bold text-textMuted">색상 안내:</span>
+                    <span class="px-3 py-1 rounded-md assign-cell-1">1지망 (선호 매우 높음)</span>
+                    <span class="px-3 py-1 rounded-md assign-cell-2">2지망</span>
+                    <span class="px-3 py-1 rounded-md assign-cell-3">3~5지망</span>
+                    <span class="px-3 py-1 rounded-md assign-cell-low">6지망 이하 (선호 낮음)</span>
+                </div>
+
+                <div class="flex gap-3 items-center flex-wrap">
+                    <span class="text-xs font-bold text-textMuted">정렬:</span>
+                    <button class="assign-sort-btn px-4 py-2 text-xs font-bold rounded-lg bg-primary text-white" data-sort="name" onclick="setAssignSort('name')">학교명 가나다순</button>
+                    <button class="assign-sort-btn px-4 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-600" data-sort="2026" onclick="setAssignSort('2026')">2026년 선호도순</button>
+                </div>
+
+                <section class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+                    <div class="overflow-x-auto max-h-[700px]">
+                        <table class="perf-table" id="assignTable"></table>
+                    </div>
+                </section>
+
+                <div class="bg-amber-50 p-6 rounded-2xl border border-amber-100">
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        <b class="text-amber-700">📌 활용 팁</b><br>
+                        같은 학교라도 연도별로 지망 순위가 크게 변할 수 있습니다. 1지망이 꾸준히 들어오는 학교는 학생·학부모의 선호도가 높음을, 6지망 이하로 배정되는 학교는 통학 거리·이미지 등의 이유로 비선호되는 경향이 있음을 시사합니다. 단, 배정 결과만으로 학교의 학업 수준을 판단해서는 안 되며, 다른 메뉴의 내신 난이도·대입 실적 정보와 함께 종합적으로 판단하시기 바랍니다.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ============= 학교 상세 모달 ============= -->
+    <div id="schoolModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/20 backdrop-blur-[2px] transition-opacity opacity-0 cursor-pointer" id="modalBackdrop" onclick="closeModal()"></div>
+        <div class="relative bg-white border border-slate-200 rounded-3xl w-full max-w-lg shadow-2xl transform scale-95 opacity-0 transition-all duration-300 flex flex-col overflow-hidden max-h-[90vh]" id="modalPanel">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-start relative overflow-hidden bg-gradient-to-br from-indigo-50/50 to-white">
+                <div class="relative z-10">
+                    <div class="flex items-center gap-3 mb-2">
+                        <h2 id="modalSchoolName" class="text-3xl font-black text-slate-800 tracking-tight">학교이름</h2>
+                        <span id="modalDiffBadge" class="px-3 py-1 rounded-full text-[10px] font-black border shadow-sm uppercase tracking-tighter">난이도</span>
+                    </div>
+                    <p class="text-sm text-primary font-bold tracking-wide uppercase">Regional Analysis Report</p>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-primary bg-slate-100 hover:bg-primary/10 rounded-full p-2 transition-all relative z-10">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-8 space-y-6 bg-white relative z-10 overflow-y-auto">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-inner">
+                        <p class="text-[10px] text-textMuted uppercase mb-2 font-black tracking-widest">수학 평균 점수</p>
+                        <p class="text-3xl font-black text-slate-800"><span id="modalAvg">00</span><span class="text-sm text-textMuted font-bold ml-1">점</span></p>
+                    </div>
+                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-inner">
+                        <p class="text-[10px] text-textMuted uppercase mb-2 font-black tracking-widest">표준편차 (격차)</p>
+                        <p class="text-3xl font-black text-primary"><span id="modalStd">00</span></p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-xs font-black text-slate-800 mb-3 uppercase tracking-widest">상세 출제 경향</h4>
+                    <p id="modalFeature" class="text-sm text-slate-600 font-medium leading-relaxed bg-amber-50/60 p-4 rounded-xl border border-amber-100"></p>
+                </div>
+                <div>
+                    <h4 class="text-xs font-black text-slate-800 mb-3 uppercase tracking-widest">고득점 전략 가이드</h4>
+                    <p id="modalComment" class="text-sm text-slate-600 font-medium leading-relaxed bg-indigo-50/60 p-4 rounded-xl border border-indigo-100"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
